@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(./build/src/rade_modulate:*)"
-    ]
-  }
-}
