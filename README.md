@@ -1,8 +1,8 @@
 # Experimental version of FreeDV RADE without python
 
-This repo from [here](https://github.com/peterbmarks/radae_nopy)
+This repo from https://github.com/peterbmarks/radae_nopy
 
-Based on work from David Rowe [here](https://github.com/drowe67/radae)
+Based on work from David Rowe https://github.com/drowe67/radae
 
 This has been tested on linux and macOS.
 
@@ -13,7 +13,21 @@ mkdir build && cd build
 cmake ..
 make -j4
 ```
-## Usage
+## Demo tools
+
+### RADE Demod: WAV RADE → WAV Speech Audio
+Take a wav file off air and produce a demodulated wav file
+
+Usage:
+rade_demod [-v 0|1|2] <input.wav> <output.wav>
+
+### RADE Modulate: WAV Speech Audio → WAV RADE
+Take a wav file with speech in it and produce a RADE OFDM encoded output wav file ready for transmission.
+
+Usage:
+rade_modulate [-v 0|1|2] <intput.wav> <output.wav>
+
+
 ### Encode: WAV → IQ
 ```
 sox ../voice.wav -r 16000 -t .s16 -c 1 - | \
@@ -29,7 +43,7 @@ cat tx.iq | \
   sox -t .s16 -r 16000 -c 1 - decoded.wav
 ```
 
-### Decode: WAV RADE to WAV
+### Decode: WAV RADE → WAV (multiple steps)
 ```
 sox ../FDV_offair.wav -r 8000 -e float -b 32 -c 1 -t raw - | \
 ./src/real2iq | \
@@ -38,20 +52,6 @@ sox ../FDV_offair.wav -r 8000 -e float -b 32 -c 1 -t raw - | \
 sox -t .s16 -r 16000 -c 1 - decoded.wav
 play decoded.wav
 ```
-
-### RADE Demod
-Take a wav file off air and produce a demodulated wav file
-
-Usage
-
-rade_demod [-v 0|1|2] <input.wav> <output.wav>
-
-### RADE Modulate
-Take a wav file with speech in it and produce a RADE OFDM encoded output wav file ready for transmission.
-
-Usage:
-rade_modulate <intput.wav> <output.wav>
-
 
 ## Files
 | File                                          | Purpose                                             |
