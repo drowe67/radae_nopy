@@ -45,6 +45,14 @@ cat tx.iq | \
 
 ### Decode: WAV RADE → WAV (multiple steps)
 ```
+usage: radae_rx [options]
+  -h, --help           Show this help
+  --model_name FILE    Path to model (ignored, uses built-in weights)
+  -v LEVEL             Verbosity level (0, 1, or 2)
+  --no-unsync          Disable automatic unsync
+```
+
+```
 sox ../FDV_offair.wav -r 8000 -e float -b 32 -c 1 -t raw - | \
 ./src/real2iq | \
 ./src/radae_rx > features.f32

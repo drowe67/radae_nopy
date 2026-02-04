@@ -352,12 +352,12 @@ int rade_rx_process(rade_rx_state *rx, float *features_out, float *eoo_out, cons
             rx->valid_count = rx->Nmf_unsync;
         } else {
             rx->valid_count--;
-            if (rx->valid_count == 0) {
+            if (rx->valid_count == 0 && !rx->no_unsync) {
                 next_state = RADE_STATE_SEARCH;
             }
         }
 
-        if (endofover || uw_fail) {
+        if ((endofover || uw_fail) && !rx->no_unsync) {
             next_state = RADE_STATE_SEARCH;
         }
     }

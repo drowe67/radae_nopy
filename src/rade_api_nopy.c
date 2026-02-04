@@ -111,6 +111,11 @@ struct rade *rade_open(char model_file[], int flags) {
         r->rx.verbose = 0;
     }
 
+    /* Set no_unsync based on flags */
+    if (flags & RADE_NO_UNSYNC) {
+        r->rx.no_unsync = 1;
+    }
+
     fprintf(stderr, "rade_open: n_features_in=%d Nmf=%d Neoo=%d n_eoo_bits=%d\n",
             rade_tx_n_features_in(&r->tx),
             rade_tx_n_samples_out(&r->tx),

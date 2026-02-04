@@ -80,6 +80,7 @@ typedef struct {
     int uw_errors;
     int Nmf_unsync;           /* Modem frames before losing sync */
     int synced_count_one_sec; /* Modem frames in one second */
+    int no_unsync;            /* If set, disable automatic unsync */
 
     /* Timing and frequency tracking */
     int tmax;

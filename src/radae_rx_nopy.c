@@ -47,6 +47,7 @@ void usage(void) {
     fprintf(stderr, "  -h, --help           Show this help\n");
     fprintf(stderr, "  --model_name FILE    Path to model (ignored, uses built-in weights)\n");
     fprintf(stderr, "  -v LEVEL             Verbosity level (0, 1, or 2)\n");
+    fprintf(stderr, "  --no-unsync          Disable automatic unsync\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Reads IQ samples from stdin, writes vocoder features to stdout.\n");
     fprintf(stderr, "Input format: complex float32 (interleaved I,Q)\n");
@@ -62,10 +63,11 @@ int main(int argc, char *argv[]) {
     static struct option long_options[] = {
         {"help",       no_argument,       NULL, 'h'},
         {"model_name", required_argument, NULL, 'm'},
+        {"no-unsync",  no_argument,       NULL, 'u'},
         {NULL,         0,                 NULL, 0}
     };
 
-    while ((opt = getopt_long(argc, argv, "hm:v:", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hm:v:u", long_options, NULL)) != -1) {
         switch (opt) {
         case 'h':
             usage();
@@ -77,6 +79,9 @@ int main(int argc, char *argv[]) {
             if (atoi(optarg) == 0) {
                 flags |= RADE_VERBOSE_0;
             }
+            break;
+        case 'u':
+            flags |= RADE_NO_UNSYNC;
             break;
         default:
             usage();
