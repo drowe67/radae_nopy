@@ -1,7 +1,10 @@
 # Experimental version of FreeDV RADE without python
 
 This repo from [here](https://github.com/peterbmarks/radae_nopy)
+
 Based on work from David Rowe [here](https://github.com/drowe67/radae)
+
+This has been tested on linux and macOS.
 
 ## Build
 ```
@@ -33,6 +36,7 @@ sox ../FDV_offair.wav -r 8000 -e float -b 32 -c 1 -t raw - | \
 ./src/radae_rx > features.f32
 ./src/lpcnet_demo -fargan-synthesis features.f32 - | \
 sox -t .s16 -r 16000 -c 1 - decoded.wav
+play decoded.wav
 ```
 
 ## Files
