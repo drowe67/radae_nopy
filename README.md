@@ -9,7 +9,8 @@ This has been tested on linux and macOS.
 ## Build
 ```
 cd radae_nopy
-mkdir build && cd build
+mkdir build
+cd build
 cmake ..
 make -j4
 ```

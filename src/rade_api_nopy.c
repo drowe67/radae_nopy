@@ -111,11 +111,6 @@ struct rade *rade_open(char model_file[], int flags) {
         r->rx.verbose = 0;
     }
 
-    /* Set no_unsync based on flags */
-    if (flags & RADE_NO_UNSYNC) {
-        r->rx.no_unsync = 1;
-    }
-
     fprintf(stderr, "rade_open: n_features_in=%d Nmf=%d Neoo=%d n_eoo_bits=%d\n",
             rade_tx_n_features_in(&r->tx),
             rade_tx_n_samples_out(&r->tx),
@@ -230,4 +225,9 @@ float rade_freq_offset(struct rade *r) {
 int rade_snrdB_3k_est(struct rade *r) {
     assert(r != NULL);
     return (int)rade_rx_snrdB_3k_est(&r->rx);
+}
+
+void rade_set_disable_unsync(struct rade *r, float seconds) {
+    assert(r != NULL);
+    r->rx.disable_unsync = seconds;
 }

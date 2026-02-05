@@ -44,10 +44,10 @@
 
 void usage(void) {
     fprintf(stderr, "usage: radae_rx_nopy [options]\n");
-    fprintf(stderr, "  -h, --help           Show this help\n");
-    fprintf(stderr, "  --model_name FILE    Path to model (ignored, uses built-in weights)\n");
-    fprintf(stderr, "  -v LEVEL             Verbosity level (0, 1, or 2)\n");
-    fprintf(stderr, "  --no-unsync          Disable automatic unsync\n");
+    fprintf(stderr, "  -h, --help              Show this help\n");
+    fprintf(stderr, "  --model_name FILE       Path to model (ignored, uses built-in weights)\n");
+    fprintf(stderr, "  -v LEVEL                Verbosity level (0, 1, or 2)\n");
+    fprintf(stderr, "  --disable_unsync SECS   Test mode: disable unsync after SECS seconds (default 0 = disabled)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Reads IQ samples from stdin, writes vocoder features to stdout.\n");
     fprintf(stderr, "Input format: complex float32 (interleaved I,Q)\n");
@@ -59,15 +59,16 @@ int main(int argc, char *argv[]) {
     int opt;
     char *model_name = "model19_check3/checkpoints/checkpoint_epoch_100.pth";
     int flags = 0;
+    float disable_unsync = 0.0f;
 
     static struct option long_options[] = {
-        {"help",       no_argument,       NULL, 'h'},
-        {"model_name", required_argument, NULL, 'm'},
-        {"no-unsync",  no_argument,       NULL, 'u'},
-        {NULL,         0,                 NULL, 0}
+        {"help",           no_argument,       NULL, 'h'},
+        {"model_name",     required_argument, NULL, 'm'},
+        {"disable_unsync", required_argument, NULL, 'd'},
+        {NULL,             0,                 NULL, 0}
     };
 
-    while ((opt = getopt_long(argc, argv, "hm:v:u", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hm:v:", long_options, NULL)) != -1) {
         switch (opt) {
         case 'h':
             usage();
@@ -80,8 +81,8 @@ int main(int argc, char *argv[]) {
                 flags |= RADE_VERBOSE_0;
             }
             break;
-        case 'u':
-            flags |= RADE_NO_UNSYNC;
+        case 'd':
+            disable_unsync = atof(optarg);
             break;
         default:
             usage();
@@ -96,6 +97,12 @@ int main(int argc, char *argv[]) {
     if (r == NULL) {
         fprintf(stderr, "Failed to open RADE\n");
         return 1;
+    }
+
+    /* Set test mode options */
+    if (disable_unsync > 0.0f) {
+        rade_set_disable_unsync(r, disable_unsync);
+        fprintf(stderr, "disable_unsync: %.1f seconds\n", disable_unsync);
     }
 
     int nin_max = rade_nin_max(r);

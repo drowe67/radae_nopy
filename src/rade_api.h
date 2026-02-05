@@ -76,7 +76,6 @@ extern "C" {
 #define RADE_USE_C_DECODER 0x2
 #define RADE_FOFF_TEST     0x4                // test mode used only by developers
 #define RADE_VERBOSE_0     0x8                // reduce verbosity to "quiet"
-#define RADE_NO_UNSYNC     0x10               // disable automatic unsync
 
 // Must be called BEFORE any other RADE functions as this
 // initializes internal library state.
@@ -128,6 +127,9 @@ RADE_EXPORT float rade_freq_offset(struct rade *r);
 
 // returns the current SNR estimate (in dB) of the Rx signal ( when rade_sync()!=0 )
 RADE_EXPORT int rade_snrdB_3k_est(struct rade *r);
+
+// test mode: disable unsync after this many seconds (0 = disabled)
+RADE_EXPORT void rade_set_disable_unsync(struct rade *r, float seconds);
 
 #ifdef __cplusplus
 }

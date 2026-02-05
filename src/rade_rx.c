@@ -348,16 +348,25 @@ int rade_rx_process(rade_rx_state *rx, float *features_out, float *eoo_out, cons
             next_state = RADE_STATE_SEARCH;
         }
     } else if (rx->state == RADE_STATE_SYNC) {
+        /* During some tests it's useful to disable unsync features */
+        int unsync_enable = 1;
+        if (rx->disable_unsync > 0.0f) {
+            int disable_after_frames = (int)(rx->disable_unsync * Fs / Nmf);
+            if (rx->synced_count > disable_after_frames) {
+                unsync_enable = 0;
+            }
+        }
+
         if (candidate) {
             rx->valid_count = rx->Nmf_unsync;
         } else {
             rx->valid_count--;
-            if (rx->valid_count == 0 && !rx->no_unsync) {
+            if (unsync_enable && rx->valid_count == 0) {
                 next_state = RADE_STATE_SEARCH;
             }
         }
 
-        if ((endofover || uw_fail) && !rx->no_unsync) {
+        if (unsync_enable && (endofover || uw_fail)) {
             next_state = RADE_STATE_SEARCH;
         }
     }
