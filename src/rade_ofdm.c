@@ -80,7 +80,7 @@ void rade_ofdm_init(rade_ofdm *ofdm, int bottleneck) {
     for (int n = 0; n < M; n++) {
         for (int c = 0; c < Nc; c++) {
             float theta = -ofdm->w[c] * n;
-            ofdm->Wfwd[n][c] = rade_cexp(theta);
+            ofdm->Wfwd[c][n] = rade_cexp(theta);
         }
     }
 
@@ -330,10 +330,7 @@ void rade_ofdm_dft(const rade_ofdm *ofdm, RADE_COMP *freq_out, const RADE_COMP *
     int Nc = ofdm->nc;
 
     for (int c = 0; c < Nc; c++) {
-        freq_out[c] = rade_czero();
-        for (int n = 0; n < M; n++) {
-            freq_out[c] = rade_cadd(freq_out[c], rade_cmul(time_in[n], ofdm->Wfwd[n][c]));
-        }
+        freq_out[c] = rade_cdot_comp(time_in, ofdm->Wfwd[c], M);
     }
 }
 
@@ -343,9 +340,10 @@ void rade_ofdm_remove_cp(const rade_ofdm *ofdm, RADE_COMP *time_out, const RADE_
     int Ncp = ofdm->ncp;
 
     /* Skip CP and apply time offset */
-    for (int n = 0; n < M; n++) {
-        time_out[n] = time_in[Ncp + time_offset + n];
-    }
+    memcpy(time_out, &time_in[Ncp + time_offset], sizeof(RADE_COMP) * M);
+    //for (int n = 0; n < M; n++) {
+    //    time_out[n] = time_in[Ncp + time_offset + n];
+    //}
 }
 
 /* Estimate pilots using 3-pilot LS fit */
