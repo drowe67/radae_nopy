@@ -94,6 +94,7 @@ int main(int argc, char *argv[]) {
 
     FILE *feoo_bits = fopen("eoo_tx.f32","rb");
     if (feoo_bits) {
+        fprintf(stderr, "Setting EOO\n");
         int n_eoo_bits = rade_n_eoo_bits(r);
         float eoo_bits[n_eoo_bits];
         int ret = fread(eoo_bits, sizeof(float), n_eoo_bits, feoo_bits);
@@ -131,6 +132,10 @@ int main(int argc, char *argv[]) {
 
     /* Send end-of-over frame */
     int n_out = rade_tx_eoo(r, eoo_out);
+    fwrite(eoo_out, sizeof(RADE_COMP), n_out, stdout);
+
+    // extra silence buf to let Rx finish processing EOO
+    memset(eoo_out,0,sizeof(eoo_out));
     fwrite(eoo_out, sizeof(RADE_COMP), n_out, stdout);
 
     fprintf(stderr, "Transmitted %d modem frames + EOO\n", frame_count);
