@@ -14,14 +14,25 @@
 
 int main(int argc, char** argv)
 {
-    if (argc != 3)
+    if (argc < 3 || argc > 4)
     {
-        fprintf(stderr, "Usage: %s [iterations] [samples/iteration]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [iterations] [samples/iteration] [output.f32]\n", argv[0]);
         return -1;
     }
 
     int iterations = atoi(argv[1]);
     int samplesPerIteration = atoi(argv[2]);
+
+    FILE* outfp = NULL;
+    if (argc == 4)
+    {
+        outfp = fopen(argv[3], "wb");
+        if (!outfp)
+        {
+            fprintf(stderr, "Warning: could not open %s for writing\n", argv[3]);
+        }
+    }
+
     int totalSamples = iterations * samplesPerIteration;
 
     // Initialize items needed for test
@@ -50,6 +61,12 @@ int main(int argc, char** argv)
     for (int i = 0; i < iterations; i++)
     {
         rade_bpf_process(&bpf, &output[i * samplesPerIteration], &input[i * samplesPerIteration], samplesPerIteration);
+    }
+
+    if (outfp)
+    {
+        fwrite(output, sizeof(RADE_COMP), totalSamples, outfp);
+        fclose(outfp);
     }
 
     // Analyze result:
