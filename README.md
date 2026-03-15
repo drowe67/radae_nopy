@@ -95,3 +95,7 @@ radae_nopy/
 ```
 
 The implementation uses built-in neural network weights (compiled from `rade_enc_data.c` and `rade_dec_data.c`), eliminating any need for Python or external model files at runtime.
+
+# Automated testing
+
+This commit is simply to see if the run_ctest workflow is triggered and succeeds.
