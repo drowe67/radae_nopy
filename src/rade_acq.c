@@ -75,7 +75,7 @@ void rade_acq_init(rade_acq *acq, const rade_ofdm *ofdm, float frange, float fst
 
         for (int n = 0; n < RADE_M; n++) {
             RADE_COMP w_vec = rade_cexp(w * n);
-            acq->p_w[n][f_idx] = rade_cmul(w_vec, acq->p[n]);
+            acq->p_w[f_idx][n] = rade_cmul(w_vec, acq->p[n]);
         }
     }
 }
@@ -112,8 +112,8 @@ int rade_acq_detect_pilots(rade_acq *acq, const RADE_COMP *rx, int *tmax, float 
             for (int n = 0; n < M; n++) {
                 /* Note: Python uses np.conj(rx) first, then matmul
                    So Dt1[t] = conj(rx[t:t+M]) . p_w */
-                Dt1 = rade_cadd(Dt1, rade_cmul(rade_cconj(rx[t + n]), acq->p_w[n][f_idx]));
-                Dt2 = rade_cadd(Dt2, rade_cmul(rade_cconj(rx[t + Nmf + n]), acq->p_w[n][f_idx]));
+                Dt1 = rade_cadd(Dt1, rade_cmul(rade_cconj(rx[t + n]), acq->p_w[f_idx][n]));
+                Dt2 = rade_cadd(Dt2, rade_cmul(rade_cconj(rx[t + Nmf + n]), acq->p_w[f_idx][n]));
             }
 
             acq->Dt1[t][f_idx] = Dt1;
@@ -231,8 +231,8 @@ int rade_acq_check_pilots(rade_acq *acq, const RADE_COMP *rx,
             RADE_COMP Dt2 = rade_czero();
 
             for (int n = 0; n < M; n++) {
-                Dt1 = rade_cadd(Dt1, rade_cmul(rade_cconj(rx[t + n]), acq->p_w[n][f_idx]));
-                Dt2 = rade_cadd(Dt2, rade_cmul(rade_cconj(rx[t + Nmf + n]), acq->p_w[n][f_idx]));
+                Dt1 = rade_cadd(Dt1, rade_cmul(rade_cconj(rx[t + n]), acq->p_w[f_idx][n]));
+                Dt2 = rade_cadd(Dt2, rade_cmul(rade_cconj(rx[t + Nmf + n]), acq->p_w[f_idx][n]));
             }
 
             acq->Dt1[t][f_idx] = Dt1;

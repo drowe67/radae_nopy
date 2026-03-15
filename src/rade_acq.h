@@ -59,7 +59,7 @@ typedef struct {
     int n_fcoarse;                              /* Number of frequency steps */
 
     /* Pre-computed frequency-shifted pilots: p_w[M][n_freq] */
-    RADE_COMP p_w[RADE_M][RADE_ACQ_NFREQ];
+    RADE_COMP p_w[RADE_ACQ_NFREQ][RADE_M];
 
     /* Pilot power for normalization */
     float sigma_p;

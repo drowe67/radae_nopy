@@ -92,7 +92,10 @@ void rade_bpf_process(rade_bpf *bpf, RADE_COMP *y, const RADE_COMP *x, int n) {
         RADE_COMP x_bb = rade_cmul(x[i], phase);
 
         /* Shift filter memory and add new sample */
-        memmove(&bpf->mem[1], &bpf->mem[0], sizeof(RADE_COMP) * (ntap - 1));
+        for (int index = ntap - 1; index >= 1; index--)
+        {
+            bpf->mem[index] = bpf->mem[index - 1];
+        }
         bpf->mem[0] = x_bb;
 
         /* FIR filter: y_bb = sum(h[k] * mem[k])

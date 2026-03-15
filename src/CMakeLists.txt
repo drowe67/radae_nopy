@@ -51,3 +51,7 @@ target_link_libraries(rade_demod_wav rade opus m)
 # WAV modulator: WAV in → features → RADE encode → OFDM mod → WAV out
 add_executable(rade_modulate_wav rade_modulate_wav.c)
 target_link_libraries(rade_modulate_wav rade opus m)
+
+# BPF test tool
+add_executable(rade_bpf_test rade_bpf_test.c kiss_fft.c kiss_fftr.c)
+target_link_libraries(rade_bpf_test rade opus m)
