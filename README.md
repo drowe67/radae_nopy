@@ -1,20 +1,23 @@
 # C Port of RADE V1
 
-This repo contains a pure C implementaion of RADE V1, with all Python code and dependancies removed. It was derived from the [reference Python implementation](https://github.com/drowe67/radae) with the asistance of Claude Code. It has been reviewed, and carefully tested by the FreeDV team.  It passes the same [suite of automated tests](https://github.com/drowe67/radae/pull/66) as the Python version.
+This repo contains a pure C implementaion of RADE V1, with all Python code and dependencies removed. It was derived from the [reference Python implementation](https://github.com/drowe67/radae) with the asistance of Claude Code. It has been reviewed, and carefully tested by the FreeDV team.  It passes the same [suite of automated tests](https://github.com/drowe67/radae/pull/66) as the Python version.
 
 This has been tested on Linux and macOS.
 
 ## Build
+
 ```
 cd radae_nopy
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j4
+make -j$(nproc) # or -j$(sysctl -n hw.logicalcpu) on macOS
 ```
+
 ## Demo tools
 
 ### RADE Demod: WAV RADE → WAV Speech Audio
+
 Take a wav file off air and produce a demodulated wav file
 ```
 Usage:
@@ -22,13 +25,16 @@ rade_demod_wav [-v 0|1|2] <input.wav> <output.wav>
 ```
 
 ### RADE Modulate: WAV Speech Audio → WAV RADE
+
 Take a wav file with speech in it and produce a RADE OFDM encoded output wav file ready for transmission.
+
 ```
 Usage:
 rade_modulate_wav [-v 0|1|2] <intput.wav> <output.wav>
 ```
 
 ### Encode: WAV → IQ
+
 ```
 sox ../voice.wav -r 16000 -t .s16 -c 1 - | \
   ./src/lpcnet_demo -features /dev/stdin - | \
@@ -36,6 +42,7 @@ sox ../voice.wav -r 16000 -t .s16 -c 1 - | \
 ```
 
 ### Decode: IQ → WAV  
+
 ```
 cat tx.iq | \
   ./src/radae_rx | \
