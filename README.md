@@ -1,17 +1,15 @@
-# Experimental version of FreeDV RADE without python
+# C Port of RADE V1
 
-This repo from https://github.com/peterbmarks/radae_nopy - thanks Peter for this fine innovation
+This repo contains a pure C implementaion of RADE V1, with all Python code and dependancies removed. It was derived from the [reference Python implementation](https://github.com/drowe67/radae) with the asistance of Claude Code. It has been reviewed, and carefully tested by the FreeDV team.  It passes the same [suite of automated tests](https://github.com/drowe67/radae/pull/66) as the Python version.
 
-Based on work from David Rowe https://github.com/drowe67/radae
-
-This has been tested on linux and macOS.
+This has been tested on Linux and macOS.
 
 ## Build
 ```
 cd radae_nopy
 mkdir build
 cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 ```
 ## Demo tools
@@ -98,4 +96,4 @@ The implementation uses built-in neural network weights (compiled from `rade_en
 
 # Automated testing
 
-This commit is simply to see if the run_ctest workflow is triggered and succeeds.
+A suite of tests will be run on every GitHub push.  They can also be run [locally](https://github.com/drowe67/radae/pull/66).
