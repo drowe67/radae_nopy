@@ -32,6 +32,8 @@ set_target_properties(rade PROPERTIES
     PUBLIC_HEADER "rade_api.h"
 )
 
+if(NOT WIN32)
+
 # Standalone transmitter
 add_executable(radae_tx radae_tx_nopy.c)
 target_link_libraries(radae_tx rade opus m)
@@ -59,3 +61,5 @@ target_link_libraries(rade_bpf_test rade opus m)
 # BER test tool: QPSK symbol BER test for modem equalisation code
 add_executable(rade_ber_test rade_ber_test.c)
 target_link_libraries(rade_ber_test rade m)
+
+endif(NOT WIN32)
