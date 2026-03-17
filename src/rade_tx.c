@@ -200,6 +200,7 @@ int rade_tx_state_eoo(rade_tx_state *tx, RADE_COMP *tx_out) {
 
         RADE_COMP freq_sym[RADE_NC];
         RADE_COMP time_sym[RADE_M];
+        RADE_COMP time_cp[RADE_M + RADE_NCP];
 
         for (int d = 0; d < n_data; d++) {
             int frame_pos = d + 2;   /* symbol index in EOO frame */
@@ -209,15 +210,22 @@ int rade_tx_state_eoo(rade_tx_state *tx, RADE_COMP *tx_out) {
                 int bit_idx = (d * Nc + c) * 2;
                 freq_sym[c].real = tx->eoo_bits[bit_idx];
                 freq_sym[c].imag = tx->eoo_bits[bit_idx + 1];
-                if (tx->ofdm.bottleneck == 3) {
-                    freq_sym[c] = rade_tanh_limit(freq_sym[c]);
-                }
-                freq_sym[c] = rade_cscale(freq_sym[c], tx->ofdm.pilot_gain);
             }
 
-            /* IDFT → time domain, insert CP, write to tx_out */
+            /* IDFT → time domain, insert CP */
             rade_ofdm_idft(&tx->ofdm, time_sym, freq_sym);
-            rade_ofdm_insert_cp(&tx->ofdm, &tx_out[frame_pos * (M + Ncp)], time_sym);
+            rade_ofdm_insert_cp(&tx->ofdm, time_cp, time_sym);
+
+            /* Apply pilot_gain and bottleneck tanh in time domain after CP insertion,
+               matching Python set_eoo_bits: eoo_tx = eoo_tx * pilot_gain (then tanh) */
+            for (int n = 0; n < M + Ncp; n++) {
+                time_cp[n] = rade_cscale(time_cp[n], tx->ofdm.pilot_gain);
+                if (tx->ofdm.bottleneck == 3) {
+                    time_cp[n] = rade_tanh_limit(time_cp[n]);
+                }
+            }
+
+            memcpy(&tx_out[frame_pos * (M + Ncp)], time_cp, sizeof(RADE_COMP) * (M + Ncp));
         }
     }
 
