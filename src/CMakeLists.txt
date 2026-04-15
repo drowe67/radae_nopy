@@ -62,4 +62,8 @@ target_link_libraries(rade_bpf_test rade opus m)
 add_executable(rade_ber_test rade_ber_test.c)
 target_link_libraries(rade_ber_test rade m)
 
+# Callsign round-trip test: set callsign → EOO TX → OFDM demod → decode
+add_executable(rade_callsign_test rade_callsign_test.c)
+target_link_libraries(rade_callsign_test rade m)
+
 endif(NOT WIN32)
