@@ -9,6 +9,7 @@ endif (CMAKE_CROSSCOMPILING)
 if (NOT DEFINED OPUS_URL)
 set(OPUS_URL https://github.com/xiph/opus/archive/940d4e5af64351ca8ba8390df3f555484c567fbb.zip)
 endif (NOT DEFINED OPUS_URL)
+message(STATUS "Using Opus from ${OPUS_URL}")
 
 include(ExternalProject)
 if(APPLE AND BUILD_OSX_UNIVERSAL)
