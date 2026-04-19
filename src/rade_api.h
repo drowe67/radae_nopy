@@ -63,6 +63,9 @@ typedef struct {
 } RADE_COMP;
 #endif
 
+#include "rade_tx.h"
+#include "rade_rx.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -83,6 +86,18 @@ RADE_EXPORT void rade_initialize(void);
 
 // Should be called when done with RADE.
 RADE_EXPORT void rade_finalize(void);
+
+struct rade {
+    int flags;
+    int auxdata;
+    int bottleneck;
+
+    /* Transmitter state */
+    rade_tx_state tx;
+
+    /* Receiver state */
+    rade_rx_state rx;
+};
 
 // note single context only in this version, one context has one Tx, and one Rx
 RADE_EXPORT struct rade *rade_open(char model_file[], int flags);

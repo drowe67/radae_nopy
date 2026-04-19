@@ -42,24 +42,6 @@
 #include <stdio.h>
 
 #include "rade_api.h"
-#include "rade_tx.h"
-#include "rade_rx.h"
-
-/*---------------------------------------------------------------------------*\
-                           RADE CONTEXT
-\*---------------------------------------------------------------------------*/
-
-struct rade {
-    int flags;
-    int auxdata;
-    int bottleneck;
-
-    /* Transmitter state */
-    rade_tx_state tx;
-
-    /* Receiver state */
-    rade_rx_state rx;
-};
 
 /*---------------------------------------------------------------------------*\
                         INITIALIZATION
