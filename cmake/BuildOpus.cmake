@@ -9,6 +9,7 @@ endif (CMAKE_CROSSCOMPILING)
 if (NOT DEFINED OPUS_URL)
 set(OPUS_URL https://github.com/xiph/opus/archive/940d4e5af64351ca8ba8390df3f555484c567fbb.zip)
 endif (NOT DEFINED OPUS_URL)
+message(STATUS "Using Opus from ${OPUS_URL}")
 
 include(ExternalProject)
 if(APPLE AND BUILD_OSX_UNIVERSAL)
@@ -57,6 +58,13 @@ set_target_properties(opus PROPERTIES
 )
 
 else(APPLE AND BUILD_OSX_UNIVERSAL)
+
+# Disable Opus CPU feature detection when crosscompiling for ARM due to
+# compiler issues building Windows for ARM version.
+if (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+set(CONFIGURE_COMMAND ${CONFIGURE_COMMAND} --disable-rtcd)
+endif (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+
 ExternalProject_Add(build_opus
     BUILD_IN_SOURCE 1
     PATCH_COMMAND sh -c "patch dnn/nnet.h < ${CMAKE_SOURCE_DIR}/src/opus-nnet.h.diff"
