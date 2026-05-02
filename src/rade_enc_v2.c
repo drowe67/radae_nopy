@@ -127,6 +127,6 @@ void rade_core_encoder_v2(
                                     buffer, idx, 2, ACTIVATION_TANH, arch);
     idx += ENC_V2_CONV5_OUT_SIZE;
 
-    /* bottleneck=1: tanh activation on z_dense output */
-    compute_generic_dense(&model->enc_v2_zdense, latents, buffer, ACTIVATION_TANH, arch);
+    /* bottleneck=0: linear activation on z_dense output (no tanh) */
+    compute_generic_dense(&model->enc_v2_zdense, latents, buffer, ACTIVATION_LINEAR, arch);
 }
