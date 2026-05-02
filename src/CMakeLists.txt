@@ -24,6 +24,12 @@ set(RADE_V2_ML_SOURCES
     rade_sync_data.c
 )
 
+# RADE V2 DSP sources (OFDM modulator, transmitter)
+set(RADE_V2_DSP_SOURCES
+    rade_v2_ofdm.c
+    rade_tx_v2.c
+)
+
 # RADE library (Python-free)
 add_library(rade SHARED
     rade_api_nopy.c
@@ -33,6 +39,7 @@ add_library(rade SHARED
     rade_dec_data.c
     ${RADE_DSP_SOURCES}
     ${RADE_V2_ML_SOURCES}
+    ${RADE_V2_DSP_SOURCES}
 )
 target_link_libraries(rade opus m)
 target_compile_definitions(rade PRIVATE -DIS_BUILDING_RADE_API=1 -DRADE_PYTHON_FREE=1)
@@ -84,5 +91,9 @@ target_link_libraries(rade_dec_v2_test rade opus m)
 # V2 encoder test: reads features from stdin, writes latents to stdout
 add_executable(rade_enc_v2_test rade_enc_v2_test.c)
 target_link_libraries(rade_enc_v2_test rade opus m)
+
+# V2 transmitter: reads features from stdin, writes IQ samples to stdout
+add_executable(radae_v2_tx radae_v2_tx_nopy.c)
+target_link_libraries(radae_v2_tx rade opus m)
 
 endif(NOT WIN32)
