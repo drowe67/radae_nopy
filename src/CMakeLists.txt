@@ -14,6 +14,16 @@ set(RADE_DSP_SOURCES
     rade_rx.c
 )
 
+# RADE V2 ML inference sources (encoder, decoder, frame-sync)
+set(RADE_V2_ML_SOURCES
+    rade_enc_v2.c
+    rade_dec_v2.c
+    rade_sync.c
+    rade_enc_v2_data.c
+    rade_dec_v2_data.c
+    rade_sync_data.c
+)
+
 # RADE library (Python-free)
 add_library(rade SHARED
     rade_api_nopy.c
@@ -22,6 +32,7 @@ add_library(rade SHARED
     rade_enc_data.c
     rade_dec_data.c
     ${RADE_DSP_SOURCES}
+    ${RADE_V2_ML_SOURCES}
 )
 target_link_libraries(rade opus m)
 target_compile_definitions(rade PRIVATE -DIS_BUILDING_RADE_API=1 -DRADE_PYTHON_FREE=1)
@@ -65,5 +76,13 @@ target_link_libraries(rade_ber_test rade m)
 # Callsign round-trip test: set callsign → EOO TX → OFDM demod → decode
 add_executable(rade_callsign_test rade_callsign_test.c)
 target_link_libraries(rade_callsign_test rade m)
+
+# V2 decoder test: reads latents from stdin, writes features to stdout
+add_executable(rade_dec_v2_test rade_dec_v2_test.c)
+target_link_libraries(rade_dec_v2_test rade opus m)
+
+# V2 encoder test: reads features from stdin, writes latents to stdout
+add_executable(rade_enc_v2_test rade_enc_v2_test.c)
+target_link_libraries(rade_enc_v2_test rade opus m)
 
 endif(NOT WIN32)
