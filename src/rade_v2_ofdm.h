@@ -70,7 +70,10 @@ extern "C" {
 typedef struct {
     float     w[RADE_V2_NC];
     RADE_COMP Winv[RADE_V2_M][RADE_V2_NC];     /* IDFT matrix: Nc freq -> M time */
-    RADE_COMP pend[RADE_V2_M];                 /* EOO pilot (no CP) */
+    RADE_COMP Wfwd[RADE_V2_NC][RADE_V2_M];     /* DFT matrix:  M time  -> Nc freq */
+    RADE_COMP phase_corr[RADE_V2_NC];          /* Per-carrier phase correction exp(j*8*w[c]) */
+    RADE_COMP pend[RADE_V2_NC];                /* EOO pilot symbols (freq domain) */
+    RADE_COMP pend_td[RADE_V2_M];              /* EOO pilot time domain (no CP) */
     RADE_COMP pend_cp[RADE_V2_SYM_LEN];        /* EOO pilot with CP */
     RADE_COMP eoo[RADE_V2_NEOO];               /* Pre-computed EOO frame */
 } rade_v2_ofdm;
@@ -79,12 +82,24 @@ typedef struct {
                             FUNCTIONS
 \*---------------------------------------------------------------------------*/
 
-/* Initialise V2 OFDM state (carrier freqs, IDFT matrix, EOO frame) */
+/* Initialise V2 OFDM state (carrier freqs, DFT/IDFT matrices, EOO frame) */
 void rade_v2_ofdm_init(rade_v2_ofdm *ofdm);
 
 /* Modulate one modem frame: z[RADE_V2_LATENT_DIM] -> tx_out[RADE_V2_NMF]
    Returns number of output samples (RADE_V2_NMF). */
 int rade_v2_ofdm_mod_frame(const rade_v2_ofdm *ofdm, RADE_COMP *tx_out, const float *z);
+
+/* Demodulate one modem frame.
+   rx_i: Ns * SYM_LEN freq-corrected IQ samples (last Ns symbols, shifted each call)
+   z_hat: LATENT_DIM output floats
+   time_offset: fine timing offset into CP (default -16)
+   correct_time_offset: per-carrier phase correction samples (default -8) */
+void rade_v2_ofdm_demod_frame(const rade_v2_ofdm *ofdm, float *z_hat,
+                               const RADE_COMP *rx_i, int time_offset);
+
+/* Compute EOO channel sparsity metric from one time-domain symbol (M samples).
+   Returns instantaneous e_cp / e_total ratio. */
+float rade_v2_ofdm_eoo_metric(const rade_v2_ofdm *ofdm, const RADE_COMP *rx_sym_td);
 
 /* Return pointer to pre-computed EOO frame, set *n_out = RADE_V2_NEOO */
 const RADE_COMP *rade_v2_ofdm_get_eoo(const rade_v2_ofdm *ofdm, int *n_out);

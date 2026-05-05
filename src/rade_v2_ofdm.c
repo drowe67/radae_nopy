@@ -2,7 +2,7 @@
 
   rade_v2_ofdm.c
 
-  OFDM modulator for RADE V2 (C port).
+  OFDM modulator/demodulator for RADE V2 (C port).
 
 \*---------------------------------------------------------------------------*/
 
@@ -67,23 +67,37 @@ void rade_v2_ofdm_init(rade_v2_ofdm *ofdm) {
         }
     }
 
-    /* EOO pilot symbols (pend) */
+    /* DFT matrix: Wfwd[c][n] = exp(-j*w[c]*n)
+       freq_out[c] = sum_n time_in[n] * Wfwd[c][n] */
+    for (int c = 0; c < Nc; c++) {
+        for (int n = 0; n < M; n++) {
+            ofdm->Wfwd[c][n] = rade_cexp(-ofdm->w[c] * n);
+        }
+    }
+
+    /* Per-carrier phase correction for correct_time_offset = -8 samples:
+       phase_corr[c] = exp(j * 8 * w[c])   (= exp(-j * correct_time_offset * w[c])) */
+    for (int c = 0; c < Nc; c++) {
+        ofdm->phase_corr[c] = rade_cexp(8.0f * ofdm->w[c]);
+    }
+
+    /* EOO pilot symbols (freq domain): pend[c] = Pend[c] */
     RADE_COMP P[RADE_V2_NC];
     rade_barker_pilots(P, Nc);
     rade_eoo_pilots(ofdm->pend, P, Nc);
 
-    /* Compute pend time-domain (no CP): pend_td[n] = sum_c Pend[c]*Winv[n][c] */
-    RADE_COMP pend_td[RADE_V2_M];
-    memset(pend_td, 0, sizeof(pend_td));
+    /* EOO pilot time domain (no CP): pend_td[n] = sum_c pend[c] * Winv[n][c] */
+    memset(ofdm->pend_td, 0, sizeof(ofdm->pend_td));
     for (int n = 0; n < M; n++) {
         for (int c = 0; c < Nc; c++) {
-            pend_td[n] = rade_cadd(pend_td[n], rade_cmul(ofdm->pend[c], ofdm->Winv[n][c]));
+            ofdm->pend_td[n] = rade_cadd(ofdm->pend_td[n],
+                                          rade_cmul(ofdm->pend[c], ofdm->Winv[n][c]));
         }
     }
 
     /* Insert cyclic prefix: pend_cp = [pend_td[-Ncp:], pend_td] */
-    memcpy(ofdm->pend_cp,        &pend_td[M - Ncp], sizeof(RADE_COMP) * Ncp);
-    memcpy(&ofdm->pend_cp[Ncp],  pend_td,           sizeof(RADE_COMP) * M);
+    memcpy(ofdm->pend_cp,        &ofdm->pend_td[M - Ncp], sizeof(RADE_COMP) * Ncp);
+    memcpy(&ofdm->pend_cp[Ncp],  ofdm->pend_td,           sizeof(RADE_COMP) * M);
 
     /* EOO frame: 6 x pend_cp scaled by pilot_gain_eoo_v2
        pilot_backoff_eoo_v2 = 10^(-8/20), pilot_gain = backoff * M / sqrt(Nc) */
@@ -127,13 +141,89 @@ int rade_v2_ofdm_mod_frame(const rade_v2_ofdm *ofdm, RADE_COMP *tx_out, const fl
             time_buf[n] = rade_cdot_comp(freq_sym, ofdm->Winv[n], Nc);
         }
 
-        /* Insert cyclic prefix into output: [time[-Ncp:], time] */
+        /* Insert cyclic prefix: [time[-Ncp:], time] */
         RADE_COMP *sym_out = &tx_out[s * RADE_V2_SYM_LEN];
         memcpy(sym_out,        &time_buf[M - Ncp], sizeof(RADE_COMP) * Ncp);
         memcpy(&sym_out[Ncp],  time_buf,           sizeof(RADE_COMP) * M);
     }
 
     return RADE_V2_NMF;
+}
+
+/*---------------------------------------------------------------------------*\
+                           DEMODULATION (RX)
+\*---------------------------------------------------------------------------*/
+
+/* Demodulate one modem frame.
+   rx_i: freq-corrected IQ samples, Ns * SYM_LEN = 320 complex samples
+         (last Ns symbols, updated each symbol)
+   z_hat: LATENT_DIM output floats
+   time_offset: fine timing offset into CP (default -16, gives start at Ncp+time_offset=16)
+   phase_corr applied per carrier to compensate correct_time_offset=-8. */
+void rade_v2_ofdm_demod_frame(const rade_v2_ofdm *ofdm, float *z_hat,
+                               const RADE_COMP *rx_i, int time_offset) {
+    int Nc  = RADE_V2_NC;
+    int M   = RADE_V2_M;
+    int Ncp = RADE_V2_NCP;
+    int Ns  = RADE_V2_NS;
+    int sym_len = RADE_V2_SYM_LEN;
+
+    for (int s = 0; s < Ns; s++) {
+        /* Strip CP with timing offset: start at Ncp + time_offset */
+        const RADE_COMP *rx_dash = &rx_i[s * sym_len + Ncp + time_offset];
+
+        /* DFT: rx_sym[c] = sum_n rx_dash[n] * Wfwd[c][n] */
+        RADE_COMP rx_sym[RADE_V2_NC];
+        for (int c = 0; c < Nc; c++) {
+            rx_sym[c] = rade_cdot_comp(rx_dash, ofdm->Wfwd[c], M);
+            /* Apply phase correction for correct_time_offset */
+            rx_sym[c] = rade_cmul(rx_sym[c], ofdm->phase_corr[c]);
+        }
+
+        /* Pack into z_hat: z[2*(s*Nc+c)] = real, z[2*(s*Nc+c)+1] = imag */
+        for (int c = 0; c < Nc; c++) {
+            int z_idx = (s * Nc + c) * 2;
+            z_hat[z_idx]     = rx_sym[c].real;
+            z_hat[z_idx + 1] = rx_sym[c].imag;
+        }
+    }
+}
+
+/* EOO channel sparsity metric.
+   rx_sym_td: M freq-corrected time-domain samples (no CP).
+   Returns instantaneous e_cp/e_total ratio. */
+float rade_v2_ofdm_eoo_metric(const rade_v2_ofdm *ofdm, const RADE_COMP *rx_sym_td) {
+    int Nc  = RADE_V2_NC;
+    int M   = RADE_V2_M;
+    int Ncp = RADE_V2_NCP;
+
+    /* DFT of received symbol at carrier frequencies */
+    RADE_COMP rx_fd[RADE_V2_NC];
+    for (int c = 0; c < Nc; c++) {
+        rx_fd[c] = rade_cdot_comp(rx_sym_td, ofdm->Wfwd[c], M);
+    }
+
+    /* Channel estimate at each carrier: H_est[c] = rx_fd[c] / pend[c]
+       pend[c] = EOO pilot freq-domain symbol (pre-computed in init) */
+    RADE_COMP H_est[RADE_V2_NC];
+    for (int c = 0; c < Nc; c++) {
+        H_est[c] = rade_cdiv(rx_fd[c], ofdm->pend[c]);
+    }
+
+    /* IDFT of H_est to get channel impulse response estimate h_est.
+       Only active carriers (H_est) contribute; others are zero.
+       h_est[n] = sum_c H_est[c] * Winv[n][c]  (uses existing IDFT matrix) */
+    float e_total = 1e-12f;
+    float e_cp    = 0.0f;
+    for (int n = 0; n < M; n++) {
+        RADE_COMP h = rade_cdot_comp(H_est, ofdm->Winv[n], Nc);
+        float mag2 = h.real * h.real + h.imag * h.imag;
+        e_total += mag2;
+        if (n < Ncp || n >= M - Ncp)
+            e_cp += mag2;
+    }
+
+    return e_cp / e_total;
 }
 
 /*---------------------------------------------------------------------------*\
