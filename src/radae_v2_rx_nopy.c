@@ -47,13 +47,16 @@
 #include "rade_rx_v2.h"
 
 int main(int argc, char *argv[]) {
-    int bpf_en = 1;   /* BPF enabled by default */
-    int verbose = 0;
+    int   bpf_en        = 1;   /* BPF enabled by default */
+    int   verbose       = 0;
+    char *snr_est_fn    = NULL;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--no_bpf") == 0)  bpf_en = 0;
         if (strcmp(argv[i], "--verbose") == 0)  verbose = 1;
         if (strcmp(argv[i], "--quiet") == 0)    verbose = 0;
+        if (strcmp(argv[i], "--write_snr_est") == 0 && i+1 < argc)
+            snr_est_fn = argv[++i];
     }
 
     rade_rx_v2_state rx;
@@ -77,6 +80,11 @@ int main(int argc, char *argv[]) {
     int frame_count = 0;
     int eoo_count   = 0;
 
+    /* Dynamic array for per-symbol SNR log */
+    int    snr_log_size = 0;
+    int    snr_log_cap  = 0;
+    float *snr_log      = NULL;
+
     while (1) {
         int nin = rade_rx_v2_nin(&rx);
 
@@ -93,13 +101,32 @@ int main(int argc, char *argv[]) {
         if (flags & 0x2)
             eoo_count++;
 
+        if (snr_est_fn) {
+            if (snr_log_size == snr_log_cap) {
+                snr_log_cap = snr_log_cap ? snr_log_cap * 2 : 4096;
+                snr_log = realloc(snr_log, sizeof(float) * snr_log_cap);
+            }
+            snr_log[snr_log_size++] = rx.snr_est_dB;
+        }
+
         sym_count++;
     }
 
     fprintf(stderr, "radae_v2_rx: symbols: %d  decoded frames: %d  n_acq: %d  eoo: %d\n",
             sym_count, frame_count, rx.n_acq, eoo_count);
 
+    if (snr_est_fn && snr_log) {
+        FILE *f = fopen(snr_est_fn, "wb");
+        if (f) {
+            fwrite(snr_log, sizeof(float), snr_log_size, f);
+            fclose(f);
+        } else {
+            fprintf(stderr, "error: cannot write %s\n", snr_est_fn);
+        }
+    }
+
     free(features_out);
     free(rx_in);
+    free(snr_log);
     return 0;
 }
