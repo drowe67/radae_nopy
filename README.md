@@ -26,7 +26,7 @@ the `rade_api.h` C API gives direct access to each stage; see
 ## Build
 
 ```
-cd radae_nopy
+cd rade_c
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -169,10 +169,10 @@ Verification of your RADE integration is essential before any on-air use. A loss
 
 Before testing a hardware or software integration, establish a software-only loss baseline using the C port. This is the C port equivalent of the [reference Python verification](https://github.com/drowe67/radae/blob/main/README.md#verifying-rade-integration) in the radae repo.
 
-Run from `radae_nopy/build` (requires the `radae` Python repo at `~/radae` for `loss.py`):
+Run from `rade_c/build` (requires the `radae` Python repo at `~/radae` for `loss.py`):
 
 ```
-cd radae_nopy/build
+cd rade_c/build
 ./src/lpcnet_demo -features ../wav/all.wav features_in.f32
 cat features_in.f32 | ./src/radae_tx --v2 > tx_c.f32
 cat tx_c.f32 | ./src/radae_rx --v2 -v 0 > features_rx_c.f32
@@ -193,7 +193,7 @@ A suite of tests runs on every GitHub push. They can also be run [locally](https
 ## Directory Structure
 
 ```
-radae_nopy/
+rade_c/
 ├── CMakeLists.txt
 ├── cmake/
 │   └── BuildOpus.cmake
