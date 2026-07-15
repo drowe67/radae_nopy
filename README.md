@@ -4,6 +4,14 @@ A C library and set of tools implementing RADE V1 and V2. It was derived from th
 
 Tested on Linux and macOS.
 
+## ⚠️ RADE V2 Status
+
+RADE V2 is under active development. The waveform, model weights, and API are subject to change without notice, and future versions will not be backwards compatible with the current implementation.
+
+Known issues are under investigation. On-air use is not recommended at this stage, and the FreeDV team is not able to provide support for pre-release V2 deployments. Any on-air V2 signals should be considered premature use of the development waveform and are not part of official FreeDV development activity.
+
+The official V2 status will be announced on the [FreeDV blog](https://freedv.org).
+
 ## Pipeline Overview
 
 RADE (Radio AutoEncoder) is a neural codec for transmitting speech over HF radio channels. Speech is converted to feature vectors by the FARGAN vocoder (built as part of Opus), encoded by a neural encoder, modulated onto an OFDM waveform, and transmitted as IQ samples. The receive path reverses this: IQ samples are demodulated, decoded by a neural decoder, and synthesised back to speech by FARGAN.
