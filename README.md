@@ -10,7 +10,7 @@ RADE V2 is under active development. The waveform, model weights, and API are su
 
 Known issues are under investigation. On-air use is not recommended at this stage, and the FreeDV team is not able to provide support for pre-release V2 deployments. Any on-air V2 signals should be considered premature use of the development waveform and are not part of official FreeDV development activity.
 
-The official V2 status will be announced on the [FreeDV blog](https://freedv.org).
+The official V2 status will be announced on the [FreeDV blog](https://freedv.org/blog/).
 
 ## Pipeline Overview
 
