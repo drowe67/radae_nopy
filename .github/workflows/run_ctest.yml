@@ -12,10 +12,10 @@ jobs:
         python-version: ["3.10"]
 
     steps:
-      - name: Checkout radae_nopy code
+      - name: Checkout rade_c code
         uses: actions/checkout@v4
         with:
-          path: ${{github.workspace}}/radae_nopy
+          path: ${{github.workspace}}/rade_c
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -26,16 +26,16 @@ jobs:
         shell: bash
         run: |
           sudo apt update
-          sudo apt install octave octave-common octave-signal sox cmake git python3.10-dev
+          sudo apt install octave octave-common octave-signal sox cmake git
 
       - name: Install python packages
         shell: bash
         run: |
           pip3 install torch numpy matplotlib tqdm
 
-      - name: Build radae_nopy
+      - name: Build rade_c
         shell: bash
-        working-directory: ${{github.workspace}}/radae_nopy
+        working-directory: ${{github.workspace}}/rade_c
         run: |
           mkdir build
           cd build
@@ -55,11 +55,11 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DRADAE_NOPY_BUILD_DIR=${{github.workspace}}/radae_nopy/build ..
+          cmake -DRADE_C_BUILD_DIR=${{github.workspace}}/rade_c/build ..
           make
 
       - name: Run ctests
         shell: bash
         working-directory: ${{github.workspace}}/radae/build
         run: |
-          ctest -V --output-on-failure -R radae_nopy
+          ctest -V --output-on-failure -R rade_c
