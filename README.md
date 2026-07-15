@@ -196,7 +196,17 @@ This matches the Python reference result (loss: 0.081) to within ±10%. When tes
 
 ## Automated Testing
 
-A suite of tests runs on every GitHub push. They can also be run [locally](https://github.com/drowe67/radae/pull/66).
+A suite of ctests runs automatically on every GitHub push (Linux x86 and ARM). The tests cover V1 and V2 encode/decode pipelines, channel conditions (AWGN, MPP, MPG, MPD), acquisition, SNR estimation, EOO detection, BER, and the WAV convenience tools.
+
+To run the tests locally, the [radae](https://github.com/drowe67/radae) Python reference repo is required:
+
+```
+cd ~
+git clone https://github.com/drowe67/radae.git
+cd radae && mkdir build && cd build
+cmake -DRADE_C_BUILD_DIR=~/rade_c/build ..
+ctest -R rade_c
+```
 
 ## Directory Structure
 
