@@ -51,6 +51,7 @@ void usage(void) {
     fprintf(stderr, "  --v2                    Use RADE V2 (default: V1)\n");
     fprintf(stderr, "  --write_snr_est FILE    Write per-symbol SNR estimates (float32) to FILE (V2 only)\n");
     fprintf(stderr, "  --gain GAIN             Manual gain applied to rx samples before decoding (default 1.0)\n");
+    fprintf(stderr, "  --agc 0|1               Enable/disable input AGC (V2 only, default: on)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Reads IQ samples from stdin, writes vocoder features to stdout.\n");
     fprintf(stderr, "Input format: complex float32 (interleaved I,Q)\n");
@@ -63,6 +64,7 @@ int main(int argc, char *argv[]) {
     float disable_unsync = 0.0f;
     char *snr_est_fn = NULL;
     float gain = 1.0f;
+    int agc = -1;  /* -1 = leave library default (on) */
 
     static struct option long_options[] = {
         {"help",           no_argument,       NULL, 'h'},
@@ -71,6 +73,7 @@ int main(int argc, char *argv[]) {
         {"v2",             no_argument,       NULL, '2'},
         {"write_snr_est",  required_argument, NULL, 's'},
         {"gain",           required_argument, NULL, 'g'},
+        {"agc",            required_argument, NULL, 'a'},
         {NULL,             0,                 NULL, 0}
     };
 
@@ -99,6 +102,9 @@ int main(int argc, char *argv[]) {
         case 'g':
             gain = atof(optarg);
             break;
+        case 'a':
+            agc = atoi(optarg);
+            break;
         default:
             usage();
             return 1;
@@ -121,6 +127,10 @@ int main(int argc, char *argv[]) {
     }
     if (gain != 1.0f) {
         fprintf(stderr, "gain: %f\n", gain);
+    }
+    if (agc >= 0) {
+        rade_rx_set_agc(r, agc);
+        fprintf(stderr, "agc: %d\n", agc);
     }
 
     int nin_max = rade_nin_max(r);

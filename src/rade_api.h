@@ -160,6 +160,15 @@ RADE_EXPORT void rade_tx_set_data_symbol(struct rade *r, float symbol);
 // V2 only (aux text channel): get last received BPSK data symbol (soft decision, valid after rade_rx() returns > 0)
 RADE_EXPORT float rade_rx_get_data_symbol(struct rade *r);
 
+// V2 only: enable/disable input AGC (on by default). AGC normalises the RMS
+// level of incoming rx samples to compensate for TX/RX gain-staging
+// mismatches; without it, decode quality is sensitive to input level.
+// Effective correction range is +/-20dB around the nominal rx level of 1.0
+// (i.e. rx samples are expected to arrive already scaled to roughly that
+// peak range -- AGC corrects mismatches within that window, not arbitrary
+// input levels).
+RADE_EXPORT void rade_rx_set_agc(struct rade *r, int enable);
+
 #ifdef __cplusplus
 }
 #endif
