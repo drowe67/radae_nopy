@@ -60,6 +60,12 @@
 #define WAV_FMT_PCM   1
 #define WAV_FMT_FLOAT 3
 
+/* Maps RADE's nominal +/-1.0 TX peak to a 16-bit PCM value, leaving 6dB of
+   headroom (rather than the naive 32768.0) for the occasional sample that
+   exceeds the nominal peak due to PAPR. See RadeAPIUse.md "Scaling to 16
+   bits". */
+#define TX_SCALE 16384.0f
+
 typedef struct {
     int      sample_rate;
     int      num_channels;
@@ -214,7 +220,7 @@ static float *resample_linear(const float *in, long n_in,
 static uint32_t write_iq_real(FILE *f, int16_t *out_buf,
                               const RADE_COMP *iq, int n) {
     for (int i = 0; i < n; i++) {
-        float v = iq[i].real * 32768.0f;
+        float v = iq[i].real * TX_SCALE;
         if (v >  32767.0f)  v =  32767.0f;
         if (v < -32767.0f)  v = -32767.0f;
         out_buf[i] = (int16_t)floor(0.5 + (double)v);
