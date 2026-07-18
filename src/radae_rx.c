@@ -50,6 +50,7 @@ void usage(void) {
     fprintf(stderr, "  --disable_unsync SECS   Test mode: disable unsync after SECS seconds (default 0 = disabled)\n");
     fprintf(stderr, "  --v2                    Use RADE V2 (default: V1)\n");
     fprintf(stderr, "  --write_snr_est FILE    Write per-symbol SNR estimates (float32) to FILE (V2 only)\n");
+    fprintf(stderr, "  --gain GAIN             Manual gain applied to rx samples before decoding (default 1.0)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Reads IQ samples from stdin, writes vocoder features to stdout.\n");
     fprintf(stderr, "Input format: complex float32 (interleaved I,Q)\n");
@@ -61,6 +62,7 @@ int main(int argc, char *argv[]) {
     int flags = 0;
     float disable_unsync = 0.0f;
     char *snr_est_fn = NULL;
+    float gain = 1.0f;
 
     static struct option long_options[] = {
         {"help",           no_argument,       NULL, 'h'},
@@ -68,6 +70,7 @@ int main(int argc, char *argv[]) {
         {"disable_unsync", required_argument, NULL, 'd'},
         {"v2",             no_argument,       NULL, '2'},
         {"write_snr_est",  required_argument, NULL, 's'},
+        {"gain",           required_argument, NULL, 'g'},
         {NULL,             0,                 NULL, 0}
     };
 
@@ -93,6 +96,9 @@ int main(int argc, char *argv[]) {
         case 's':
             snr_est_fn = optarg;
             break;
+        case 'g':
+            gain = atof(optarg);
+            break;
         default:
             usage();
             return 1;
@@ -112,6 +118,9 @@ int main(int argc, char *argv[]) {
     if (disable_unsync > 0.0f) {
         rade_set_disable_unsync(r, disable_unsync);
         fprintf(stderr, "disable_unsync: %.1f seconds\n", disable_unsync);
+    }
+    if (gain != 1.0f) {
+        fprintf(stderr, "gain: %f\n", gain);
     }
 
     int nin_max = rade_nin_max(r);
@@ -146,6 +155,13 @@ int main(int argc, char *argv[]) {
         size_t n_read = fread(rx_in, sizeof(RADE_COMP), nin, stdin);
         if (n_read != (size_t)nin) {
             break;
+        }
+
+        if (gain != 1.0f) {
+            for (int i = 0; i < nin; i++) {
+                rx_in[i].real *= gain;
+                rx_in[i].imag *= gain;
+            }
         }
 
         /* Receive samples */
