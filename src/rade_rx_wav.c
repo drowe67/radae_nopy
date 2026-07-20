@@ -132,7 +132,7 @@ static float *wav_read_mono_float(FILE *f, const wav_info *info, long *n_out) {
             } else if (info->is_float && bps == 64) {
                 double tmp; fread(&tmp, 8, 1, f);  v = (float)tmp;
             } else if (bps == 16) {
-                int16_t tmp; fread(&tmp, 2, 1, f); v = tmp / 32768.0f;
+                int16_t tmp; fread(&tmp, 2, 1, f); v = tmp * (2.0f / RADE_INT16_SCALE);
             } else if (bps == 24) {
                 uint8_t b[3]; fread(b, 1, 3, f);
                 int32_t raw = ((int32_t)b[2] << 16) | (b[1] << 8) | b[0];

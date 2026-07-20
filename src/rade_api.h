@@ -76,6 +76,24 @@ extern "C" {
 #define RADE_MODEM_SAMPLE_RATE 8000           // modem waveform sample rate
 #define RADE_SPEECH_SAMPLE_RATE 16000         // speech sample rate
 
+// Scaling constant for int16 <-> float conversion.
+//
+// TX (float IQ -> int16):
+//   int16 = Re{rade_tx() output} * RADE_INT16_SCALE
+//   Nominal float IQ amplitude 1.0 maps to int16 value 16384,
+//   leaving 6 dB of headroom to the int16 ceiling (32767).
+//
+// RX, complex IQ input (int16 -> float IQ, I and Q from separate channels):
+//   float_I = int16_I / RADE_INT16_SCALE
+//   float_Q = int16_Q / RADE_INT16_SCALE
+//   Restores unit amplitude at the OFDM correlators.
+//
+// RX, real-valued input (int16 -> float, imag = 0, e.g. SSB radio or WAV file):
+//   float = int16 * (2.0f / RADE_INT16_SCALE)
+//   Re{} halves the magnitude of the positive frequency component we tune to;
+//   the factor of 2 compensates, restoring unit amplitude.
+#define RADE_INT16_SCALE 16384.0f
+
 // init rade_open() flags
 #define RADE_USE_C_ENCODER 0x1
 #define RADE_USE_C_DECODER 0x2
