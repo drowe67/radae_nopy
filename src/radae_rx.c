@@ -143,9 +143,9 @@ int main(int argc, char *argv[]) {
     /* Allocate buffers */
     RADE_COMP *rx_in = (RADE_COMP *)malloc(sizeof(RADE_COMP) * nin_max);
     float *features_out = (float *)malloc(sizeof(float) * n_features_out);
-    float *eoo_out = (float *)malloc(sizeof(float) * n_eoo_bits);
+    float *eoo_out = n_eoo_bits ? (float *)malloc(sizeof(float) * n_eoo_bits) : NULL;
 
-    if (rx_in == NULL || features_out == NULL || eoo_out == NULL) {
+    if (rx_in == NULL || features_out == NULL || (n_eoo_bits && eoo_out == NULL)) {
         fprintf(stderr, "Failed to allocate buffers\n");
         return 1;
     }

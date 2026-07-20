@@ -291,8 +291,8 @@ int main(int argc, char *argv[]) {
 
     RADE_COMP *rx_buf     = malloc((size_t)nin_max        * sizeof(RADE_COMP));
     float     *feat_buf   = malloc((size_t)n_features_out * sizeof(float));
-    float     *eoo_buf    = malloc((size_t)n_eoo_bits      * sizeof(float));
-    if (!rx_buf || !feat_buf || !eoo_buf) {
+    float     *eoo_buf    = n_eoo_bits ? malloc((size_t)n_eoo_bits * sizeof(float)) : NULL;
+    if (!rx_buf || !feat_buf || (n_eoo_bits && !eoo_buf)) {
         fprintf(stderr, "rade_demod: malloc failed\n");
         free(iq); free(rx_buf); free(feat_buf); free(eoo_buf);
         rade_close(r); rade_finalize();
