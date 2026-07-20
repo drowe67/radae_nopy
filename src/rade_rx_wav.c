@@ -112,45 +112,19 @@ static int wav_read_header(FILE *f, wav_info *info) {
     return (info->data_offset >= 0) ? 0 : -1;
 }
 
-/* Read the entire audio payload into a mono float buffer.
-   Multi-channel input is mixed down by averaging.  Caller must free(). */
+/* Read the entire audio payload into a float buffer (16-bit PCM mono only).  Caller must free(). */
 static float *wav_read_mono_float(FILE *f, const wav_info *info, long *n_out) {
-    int   bps  = info->bits_per_sample;
-    int   nch  = info->num_channels;
-    long  total = (long)info->data_size / (bps / 8);
-    long  mono  = total / nch;
+    long n = (long)info->data_size / 2;
 
-    float *buf = malloc((size_t)mono * sizeof(float));
+    float *buf = malloc((size_t)n * sizeof(float));
     if (!buf) return NULL;
 
-    for (long i = 0; i < mono; i++) {
-        float sum = 0.0f;
-        for (int ch = 0; ch < nch; ch++) {
-            float v = 0.0f;
-            if (info->is_float && bps == 32) {
-                float tmp;  fread(&tmp, 4, 1, f);  v = tmp;
-            } else if (info->is_float && bps == 64) {
-                double tmp; fread(&tmp, 8, 1, f);  v = (float)tmp;
-            } else if (bps == 16) {
-                int16_t tmp; fread(&tmp, 2, 1, f); v = tmp * (2.0f / RADE_INT16_SCALE);
-            } else if (bps == 24) {
-                uint8_t b[3]; fread(b, 1, 3, f);
-                int32_t raw = ((int32_t)b[2] << 16) | (b[1] << 8) | b[0];
-                if (raw & 0x800000) raw |= (int32_t)0xFF000000;
-                v = raw / 8388608.0f;
-            } else if (bps == 32) {
-                int32_t tmp; fread(&tmp, 4, 1, f); v = tmp / 2147483648.0f;
-            } else {
-                fprintf(stderr, "rade_demod: unsupported WAV format (%d-bit %s)\n",
-                        bps, info->is_float ? "float" : "int");
-                free(buf);
-                return NULL;
-            }
-            sum += v;
-        }
-        buf[i] = sum / nch;
+    for (long i = 0; i < n; i++) {
+        int16_t tmp;
+        if (fread(&tmp, 2, 1, f) != 1) { free(buf); return NULL; }
+        buf[i] = tmp * (2.0f / RADE_INT16_SCALE);
     }
-    *n_out = mono;
+    *n_out = n;
     return buf;
 }
 
@@ -174,35 +148,6 @@ static void wav_write_header(FILE *f, int sample_rate, uint32_t data_bytes) {
     fwrite("data",       1, 4, f);  fwrite(&data_bytes,  4, 1, f);
 }
 
-/* ---- Linear-interpolation resampler ---- */
-
-/* Resample *in (n_in samples at in_rate) to out_rate.
-   Returns a malloc'd buffer; caller must free().  Sets *n_out. */
-static float *resample_linear(const float *in, long n_in,
-                              int in_rate, int out_rate, long *n_out) {
-    if (in_rate == out_rate) {
-        float *out = malloc((size_t)n_in * sizeof(float));
-        if (out) memcpy(out, in, (size_t)n_in * sizeof(float));
-        *n_out = n_in;
-        return out;
-    }
-    if (n_in < 2) { *n_out = 0; return malloc(1); }
-
-    *n_out = (long)((double)n_in * out_rate / in_rate);
-    float *out = malloc((size_t)*n_out * sizeof(float));
-    if (!out) return NULL;
-
-    double step = (double)in_rate / (double)out_rate;   /* input samples per output sample */
-    for (long i = 0; i < *n_out; i++) {
-        double pos  = i * step;
-        long   idx  = (long)pos;
-        float  frac = (float)(pos - idx);
-        if (idx + 1 >= n_in) { idx = n_in - 2; frac = 1.0f; }
-        out[i] = in[idx] + frac * (in[idx + 1] - in[idx]);
-    }
-    return out;
-}
-
 /* ---- Usage ---- */
 
 static void usage(void) {
@@ -210,7 +155,8 @@ static void usage(void) {
             "usage: rade_demod_wav [options] <input.wav> <output.wav>\n\n"
             "  Reads a WAV file containing received RADE OFDM audio and writes\n"
             "  a WAV file containing the decoded voice audio.\n\n"
-            "  Input WAV : %d Hz mono or stereo (mixed to mono internally)\n"
+            "  Input WAV : %d Hz 16-bit PCM mono\n"
+            "              Use sox or ffmpeg to convert other formats.\n"
             "  Output WAV: mono 16-bit PCM @ %d Hz\n\n"
             "options:\n"
             "  -h, --help     Show this help\n"
@@ -273,25 +219,33 @@ int main(int argc, char *argv[]) {
                 input_file, wav.sample_rate, wav.num_channels,
                 wav.bits_per_sample, wav.is_float ? "float" : "int");
 
+    if (wav.bits_per_sample != 16 || wav.is_float) {
+        fprintf(stderr, "rade_demod: input must be 16-bit PCM WAV (got %d-bit %s); "
+                "use sox or ffmpeg to convert\n",
+                wav.bits_per_sample, wav.is_float ? "float" : "int");
+        fclose(fin);
+        return 1;
+    }
+    if (wav.sample_rate != RADE_FS) {
+        fprintf(stderr, "rade_demod: input must be %d Hz (got %d Hz); "
+                "use sox or ffmpeg to resample\n", RADE_FS, wav.sample_rate);
+        fclose(fin);
+        return 1;
+    }
+    if (wav.num_channels != 1) {
+        fprintf(stderr, "rade_demod: input must be mono (got %d channels); "
+                "use sox or ffmpeg to convert\n", wav.num_channels);
+        fclose(fin);
+        return 1;
+    }
+
     long  n_mono = 0;
     float *mono  = wav_read_mono_float(fin, &wav, &n_mono);
     fclose(fin);
     if (!mono) return 1;
 
-    /* --------------------------------------------------------- resample → 8 kHz */
-    long  n_8k   = 0;
-    float *audio;
-    if (wav.sample_rate == RADE_FS) {
-        audio = mono;   /* already at modem rate – no copy needed */
-        n_8k  = n_mono;
-    } else {
-        audio = resample_linear(mono, n_mono, wav.sample_rate, RADE_FS, &n_8k);
-        free(mono);
-        if (!audio) {
-            fprintf(stderr, "rade_demod: resample failed\n");
-            return 1;
-        }
-    }
+    float *audio = mono;
+    long   n_8k  = n_mono;
 
     if (verbose >= 1)
         fprintf(stderr, "Modem input: %ld samples @ %d Hz  (%.1f s)\n",
