@@ -271,6 +271,7 @@ int main(int argc, char *argv[]) {
                     usage();
                     return 1;
                 }
+                break;
             case  1:  use_v2  = 1; break;
             default:  usage(); return 1;
         }

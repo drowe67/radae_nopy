@@ -265,13 +265,14 @@ int main(int argc, char *argv[]) {
         switch (opt) {
             case 'h': usage(); return 0;
             case 'v': verbose = atoi(optarg); break;
-            case 'f': 
+            case 'f':
                 feature_fp = fopen(optarg, "wb");
                 if (!feature_fp) {
                     perror("Could not open feature file");
                     usage();
                     return 1;
                 }
+                break;
             case  1:  use_v2  = 1; break;
             default:  usage(); return 1;
         }
