@@ -135,20 +135,20 @@ RADE_EXPORT int rade_version_minor(void);
 
 // helpers to set up arrays
 RADE_EXPORT int rade_n_tx_out(struct rade *r);
-RADE_EXPORT int rade_n_tx_eoo_out(struct rade *r);  // V1 only
+RADE_EXPORT int rade_n_tx_eoo_out(struct rade *r);  // V1 and V2
 RADE_EXPORT int rade_nin_max(struct rade *r);
 RADE_EXPORT int rade_n_features_in_out(struct rade *r);
-RADE_EXPORT int rade_n_eoo_bits(struct rade *r);    // V1 only
+RADE_EXPORT int rade_n_eoo_bits(struct rade *r);    // V1 only; returns 0 for V2
 
 // returns number of RADE_COMP samples written to tx_out[]
 RADE_EXPORT int rade_tx(struct rade *r, RADE_COMP tx_out[], float features_in[]);
 
-// V1 only (aux text channel): set the rade_n_eoo_bits() bits to be sent in the
-// EOO frame, in +/- 1 float form (note NOT 1 or 0)
+// V1 only: set the rade_n_eoo_bits() bits to be sent in the EOO frame,
+// in +/- 1 float form (note NOT 1 or 0)
 RADE_EXPORT void rade_tx_set_eoo_bits(struct rade *r, float eoo_bits[]);
 
-// V1 only (aux text channel): transmit the final EOO frame at end of over;
-// returns the number of RADE_COMP samples written to tx_eoo_out[]
+// Transmit the final EOO frame at end of over; returns the number of
+// RADE_COMP samples written to tx_eoo_out[].  Works for both V1 and V2.
 RADE_EXPORT int rade_tx_eoo(struct rade *r, RADE_COMP tx_eoo_out[]);
 
 // call me before each call to rade_rx(), provide nin samples to rx_in[]
@@ -156,8 +156,9 @@ RADE_EXPORT int rade_nin(struct rade *r);
 
 // returns non-zero if features_out[] contains valid output. The number
 // returned is the number of samples written to features_out[].
-// V1 only (aux text channel): if has_eoo_out is set, eoo_out[] contains End of
-// Over soft decision bits from QPSK symbols in ..IQIQI... order
+// has_eoo_out is set when an End-of-Over frame is detected (V1 and V2).
+// V1 only: if has_eoo_out is set, eoo_out[] contains EOO soft-decision bits
+// from QPSK symbols in ..IQIQI... order; pass NULL for eoo_out in V2.
 RADE_EXPORT int rade_rx(struct rade *r, float features_out[], int *has_eoo_out, float eoo_out[], RADE_COMP rx_in[]);
 
 // returns non-zero if Rx is currently in sync
