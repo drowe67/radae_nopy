@@ -5,8 +5,8 @@
   RADAE WAV demodulator.  Reads a WAV file containing received RADE OFDM
   audio and writes a WAV file containing the decoded voice audio.
 
-  Combines real2iq (Hilbert), radae_rx (OFDM demod + neural decoder), and
-  the FARGAN vocoder into a single command-line tool.
+  Combines radae_rx (OFDM demod + neural decoder) and the FARGAN vocoder
+  into a single command-line tool.
 
 \*---------------------------------------------------------------------------*/
 
@@ -48,31 +48,6 @@
 #include "rade_dsp.h"
 #include "fargan.h"
 #include "lpcnet.h"
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-/* ---- Hilbert transform  (coefficients match real2iq.c exactly) ---- */
-
-#define HILBERT_NTAPS   127
-#define HILBERT_DELAY   ((HILBERT_NTAPS - 1) / 2)   /* 63 */
-
-static float hilbert_coeffs[HILBERT_NTAPS];
-
-static void init_hilbert(void) {
-    int center = HILBERT_DELAY;
-    for (int i = 0; i < HILBERT_NTAPS; i++) {
-        int n = i - center;
-        if (n == 0 || (n & 1) == 0) {
-            hilbert_coeffs[i] = 0.0f;
-        } else {
-            float h = 2.0f / (M_PI * n);
-            float w = 0.54f - 0.46f * cosf(2.0f * M_PI * i / (HILBERT_NTAPS - 1));
-            hilbert_coeffs[i] = h * w;
-        }
-    }
-}
 
 /* ---- WAV file I/O ---- */
 
@@ -235,8 +210,7 @@ static void usage(void) {
             "usage: rade_demod_wav [options] <input.wav> <output.wav>\n\n"
             "  Reads a WAV file containing received RADE OFDM audio and writes\n"
             "  a WAV file containing the decoded voice audio.\n\n"
-            "  Input WAV : any sample rate, mono or stereo\n"
-            "              (resampled to %d Hz / mixed to mono internally)\n"
+            "  Input WAV : %d Hz mono or stereo (mixed to mono internally)\n"
             "  Output WAV: mono 16-bit PCM @ %d Hz\n\n"
             "options:\n"
             "  -h, --help     Show this help\n"
@@ -323,8 +297,10 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Modem input: %ld samples @ %d Hz  (%.1f s)\n",
                 n_8k, RADE_FS, (double)n_8k / RADE_FS);
 
-    /* --------------------------------------------------------- Hilbert → IQ */
-    init_hilbert();
+    /* ------------------------------------------------- real → IQ (imag = 0) */
+    /* The OFDM carriers sit at 1062-1875 Hz; the negative-frequency mirror
+       of a real signal falls at -1875 to -1062 Hz and is rejected by the
+       OFDM correlators, so no Hilbert transform is needed. */
     RADE_COMP *iq = malloc((size_t)n_8k * sizeof(RADE_COMP));
     if (!iq) {
         fprintf(stderr, "rade_demod: malloc failed (IQ buffer)\n");
@@ -332,15 +308,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     for (long i = 0; i < n_8k; i++) {
-        iq[i].real = (i >= HILBERT_DELAY) ? audio[i - HILBERT_DELAY] : 0.0f;
-
-        float imag = 0.0f;
-        for (int k = 0; k < HILBERT_NTAPS; k++) {
-            long idx = i - k;
-            if (idx >= 0 && idx < n_8k)
-                imag += hilbert_coeffs[k] * audio[idx];
-        }
-        iq[i].imag = imag;
+        iq[i].real = audio[i];
+        iq[i].imag = 0.0f;
     }
     free(audio);
 
