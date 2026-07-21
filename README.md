@@ -52,7 +52,7 @@ complex float32 (interleaved I,Q) at 8000 Hz. Speech I/O runs at 16000 Hz.
 #### Transmit: WAV → IQ
 
 ```
-sox ../voice.wav -r 16000 -t .s16 -c 1 - | \
+sox ../input_sample.wav -r 16000 -t .s16 -c 1 - | \
   ./src/lpcnet_demo -features /dev/stdin - | \
   ./src/radae_tx > tx1.iq
 ```
@@ -71,7 +71,7 @@ cat tx1.iq | \
 #### Transmit: WAV → IQ
 
 ```
-sox ../voice.wav -r 16000 -t .s16 -c 1 - | \
+sox ../input_sample.wav -r 16000 -t .s16 -c 1 - | \
   ./src/lpcnet_demo -features /dev/stdin - | \
   ./src/radae_tx --v2 > tx2.iq
 ```
@@ -96,15 +96,15 @@ The simplest way to try RADE is with the WAV convenience tools. From the build d
 
 ```
 # RADE V1
-./src/rade_tx_wav ../voice.wav tx_rade1.wav
+./src/rade_tx_wav ../input_sample.wav tx_rade1.wav
 ./src/rade_rx_wav tx_rade1.wav decoded_rade1.wav
 
 # RADE V2
-./src/rade_tx_wav --v2 ../voice.wav tx_rade2.wav
+./src/rade_tx_wav --v2 ../input_sample.wav tx_rade2.wav
 ./src/rade_rx_wav --v2 tx_rade2.wav decoded_rade2.wav
 ```
 
-This encodes `voice.wav` to a RADE waveform and decodes it back to speech —
+This encodes `input_sample.wav` to a RADE waveform and decodes it back to speech —
 no additional tools required.
 
 ### rade_tx_wav: Speech WAV → RADE WAV
