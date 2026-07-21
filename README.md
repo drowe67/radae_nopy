@@ -107,6 +107,22 @@ The simplest way to try RADE is with the WAV convenience tools. From the build d
 This encodes `input_sample.wav` to a RADE waveform and decodes it back to speech —
 no additional tools required.
 
+### Real-valued input (SSB radio or off-air WAV)
+
+`rade_rx_wav` accepts a real-valued 8 kHz WAV file directly — for example,
+audio recorded from a conventional SSB receiver or a KiwiSDR. Use sox to
+resample to 8 kHz first if needed:
+
+```
+sox offair.wav -r 8000 -c 1 offair_8k.wav
+./src/rade_rx_wav --v2 offair_8k.wav decoded.wav
+```
+
+If integrating at the API level, note that real-valued input requires a
+different scaling factor than complex IQ — see `RADE_INT16_SCALE` in
+`rade_api.h` for the full rationale, and `src/rade_rx_wav.c` for a
+worked example.
+
 ### rade_tx_wav: Speech WAV → RADE WAV
 
 ```
@@ -117,16 +133,6 @@ rade_tx_wav [--v2] [-v 0|1] <input.wav> <output.wav>
 
 ```
 rade_rx_wav [--v2] [-v 0|1|2|3] <input.wav> <output.wav>
-```
-
-### Decode from a real off-air WAV (manual steps)
-
-```
-sox FDV_offair.wav -r 8000 -e float -b 32 -c 1 -t raw - | \
-  ./src/real2iq | \
-  ./src/radae_rx > features.f32
-./src/lpcnet_demo -fargan-synthesis features.f32 - | \
-  sox -t .s16 -r 16000 -c 1 - decoded.wav
 ```
 
 ## Files
