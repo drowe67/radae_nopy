@@ -300,6 +300,7 @@ static int update_frame_sync_decode(rade_rx_v2_state *rx,
     for (int f = 0; f < frames; f++) {
         float *dst = &features_out[f * nb_total];
         float *src = &dec_features[f * num_feat];
+        if (src[18] < -1.4f) src[18] = -1.4f;   /* limit_pitch, matches radae_v2.py default */
         for (int j = 0; j < num_used; j++)
             dst[j] = src[j];
     }
