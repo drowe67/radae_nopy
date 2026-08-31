@@ -81,6 +81,8 @@ int rade_rx_v2_init(rade_rx_v2_state *rx, int bpf_en) {
     rade_v2_ofdm_init(&rx->ofdm);
     rade_init_decoder_v2(&rx->dec_state);
 
+    rx->timing_adj = 1;
+
     /* BPF */
     rx->bpf_en = bpf_en;
     if (bpf_en) {
